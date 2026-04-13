@@ -21,6 +21,7 @@ library(rhandsontable)
 # ===================== KONFIG =====================
 
 source("R/config.R",               encoding = "UTF-8")
+source("R/ftp_handler.R",          encoding = "UTF-8")   # FTP-kommunikation (ladda ned/upp)
 source("R/helpers_core.R",         local = environment(), encoding = "UTF-8")
 source("R/helpers_ids_labels.R",   local = environment(), encoding = "UTF-8")
 source("R/helpers_hot.R",          local = environment(), encoding = "UTF-8")

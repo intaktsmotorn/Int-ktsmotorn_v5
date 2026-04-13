@@ -42,19 +42,41 @@ server <- function(input, output, session) {
   )
   
   load_from_disk <- function() {
-    validate(need(file.exists(TARGET_XLSX), "Kan inte hitta Excel-filen p\u00e5 disk."))
-    
+    # ÄNDRAT: laddar ner från FTP till en temporär lokal fil istället för att
+    # läsa direkt från disk.  read_wb_clean() fungerar oförändrat — den tar en sökväg.
+    local_temp <- tryCatch(
+      ftp_download(FTP_REMOTE_FILE),
+      error = function(e) {
+        validate(FALSE, paste("Kan inte ladda ner Excel-filen fr\u00e5n FTP:", conditionMessage(e)))
+      }
+    )
+    validate(need(
+      is.character(local_temp) && file.exists(local_temp),
+      "Kan inte h\u00e4mta Excel-filen fr\u00e5n FTP."
+    ))
+    on.exit(unlink(local_temp), add = TRUE)   # ta bort tempfilen när funktionen avslutas
+
+    # ÄNDRAT: startup-backup laddas upp till FTP (kopierar den nedladdade tempfilen)
     if (!isTRUE(rv$startup_backup_done)) {
-      bk <- create_startup_backup(TARGET_XLSX, wb_for_fallback = NULL)
+      bk <- tryCatch({
+        bname <- ftp_backup_filename(FTP_REMOTE_FILE)
+        ftp_upload(local_temp, bname)
+        list(ok = TRUE, name = bname)
+      }, error = function(e) {
+        list(ok = FALSE, name = "", msg = conditionMessage(e))
+      })
       if (isTRUE(bk$ok)) {
-        showNotification(paste("Backup skapad vid start:", basename(bk$path)), type = "message", duration = 4)
+        showNotification(paste("FTP-backup skapad vid start:", bk$name), type = "message", duration = 4)
       } else {
-        showNotification("Kunde inte skapa startup-backup (filen kan vara l\u00e5st eller saknar beh\u00f6righet).", type = "error", duration = 6)
+        showNotification(
+          paste0("Kunde inte skapa startup-backup p\u00e5 FTP", if (nzchar(bk$msg)) paste0(": ", bk$msg) else "."),
+          type = "warning", duration = 6
+        )
       }
       rv$startup_backup_done <- TRUE
     }
-    
-    wb <- read_wb_clean(TARGET_XLSX)
+
+    wb <- read_wb_clean(local_temp)    # oförändrat — läser från tempfil
     
     wb <- ensure_fm_sheet(wb)
     wb <- ensure_maklare_sheet(wb)
@@ -781,11 +803,14 @@ server <- function(input, output, session) {
     }
   }
   
-  # ===================== Skriv till disk =====================
-  
+  # ===================== Skriv till FTP =====================
+  # ÄNDRAT: skriver wb till en temporär lokal fil och laddar sedan upp till FTP.
+  # Lock-filen är fortfarande lokal (förhindrar samtidiga skrivningar i samma process).
+
   write_wb_to_disk <- function(with_backup = FALSE) {
     req(rv$wb)
 
+    # Lock: lokal fil, samma mekanism som tidigare
     lock_path <- paste0(TARGET_XLSX, ".lock")
     if (file.exists(lock_path)) {
       showNotification(
@@ -794,26 +819,38 @@ server <- function(input, output, session) {
       )
       return(invisible(FALSE))
     }
+    # Se till att data/-mappen finns (behövs för lock-filen)
+    if (!dir.exists(dirname(lock_path))) dir.create(dirname(lock_path), recursive = TRUE)
     writeLines(as.character(Sys.time()), lock_path)
     on.exit(suppressWarnings(file.remove(lock_path)), add = TRUE)
 
+    # Skriv workbook till en temporär lokal fil
+    local_temp <- tempfile(fileext = ".xlsx")
+    on.exit(unlink(local_temp), add = TRUE)
+
+    # ÄNDRAT: backup laddas upp till FTP (skriver rv$wb till backup-filnamn)
     if (with_backup) {
-      bpath <- backup_path_same_dir(TARGET_XLSX)
-      ok_copy <- FALSE
-      if (file.exists(TARGET_XLSX)) ok_copy <- suppressWarnings(file.copy(TARGET_XLSX, bpath, overwrite = FALSE))
-      if (!isTRUE(ok_copy)) suppressWarnings(writexl::write_xlsx(rv$wb, path = bpath))
+      tryCatch({
+        writexl::write_xlsx(rv$wb, path = local_temp)
+        bname <- ftp_backup_filename(FTP_REMOTE_FILE)
+        ftp_upload(local_temp, bname)
+      }, error = function(e) {
+        warning(paste("[FTP] Backup-uppladdning misslyckades:", conditionMessage(e)))
+      })
     }
 
-    result <- tryCatch(
-      { writexl::write_xlsx(rv$wb, path = TARGET_XLSX); TRUE },
-      error = function(e) {
-        showNotification(
-          paste0("Fel vid sparande till Excel: ", conditionMessage(e)),
-          type = "error", duration = 8
-        )
-        FALSE
-      }
-    )
+    # ÄNDRAT: skriv huvud-filen till FTP
+    result <- tryCatch({
+      writexl::write_xlsx(rv$wb, path = local_temp)
+      ftp_upload(local_temp, FTP_REMOTE_FILE)
+      TRUE
+    }, error = function(e) {
+      showNotification(
+        paste0("Fel vid sparande till FTP: ", conditionMessage(e)),
+        type = "error", duration = 8
+      )
+      FALSE
+    })
     invisible(result)
   }
 

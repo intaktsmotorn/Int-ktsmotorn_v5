@@ -43,9 +43,14 @@ if (!file.exists(DB_PATH)) {
 }
 # --------------------------------------------------------------------------
 
-# Path to the Excel workbook used as the data store.
-# Relative to the app working directory (project root when launched via shiny::runApp).
+# Lokal sökväg — används BARA för lock-filen (förhindrar samtidiga skrivningar).
+# Filen läses/skrivs inte längre från disk utan hämtas via FTP (se ftp_handler.R).
 TARGET_XLSX <- file.path("data", "Base_data.xlsx")
+
+# Filnamn på FTP-servern (relativt FTP_PATH som definieras i .Renviron).
+# FTP-katalogen är: ftp://<FTP_SERVER><FTP_PATH>
+# Full URL blir: ftp://<FTP_SERVER><FTP_PATH>Base_data.xlsx
+FTP_REMOTE_FILE <- "Base_data.xlsx"
 
 # Revenue threshold above which the bonus percentage applies (SEK / month).
 BONUS_THRESHOLD <- 100000
