@@ -690,8 +690,8 @@
       "description": {
         "Package": "cli",
         "Title": "Helpers for Developing Command Line Interfaces",
-        "Version": "3.6.5",
-        "Authors@R": "c(\n    person(\"Gábor\", \"Csárdi\", , \"gabor@posit.co\", role = c(\"aut\", \"cre\")),\n    person(\"Hadley\", \"Wickham\", role = \"ctb\"),\n    person(\"Kirill\", \"Müller\", role = \"ctb\"),\n    person(\"Salim\", \"Brüggemann\", , \"salim-b@pm.me\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0002-5329-5987\")),\n    person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\"))\n  )",
+        "Version": "3.6.6",
+        "Authors@R": "c(\n    person(\"Gábor\", \"Csárdi\", , \"gabor@posit.co\", role = c(\"aut\", \"cre\")),\n    person(\"Hadley\", \"Wickham\", role = \"ctb\"),\n    person(\"Kirill\", \"Müller\", role = \"ctb\"),\n    person(\"Salim\", \"Brüggemann\", , \"salim-b@pm.me\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0002-5329-5987\")),\n    person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\"),\n           comment = c(ROR = \"03wc8by49\"))\n  )",
         "Description": "A suite of tools to build attractive command line interfaces\n    ('CLIs'), from semantic elements: headings, lists, alerts, paragraphs,\n    etc. Supports custom themes via a 'CSS'-like language. It also\n    contains a number of lower level 'CLI' elements: rules, boxes, trees,\n    and 'Unicode' symbols with 'ASCII' alternatives. It support ANSI\n    colors and text styles as well.",
         "License": "MIT + file LICENSE",
         "URL": "https://cli.r-lib.org, https://github.com/r-lib/cli",
@@ -701,15 +701,16 @@
         "Suggests": "callr, covr, crayon, digest, glue (>= 1.6.0), grDevices,\nhtmltools, htmlwidgets, knitr, methods, processx, ps (>=\n1.3.4.9000), rlang (>= 1.0.2.9003), rmarkdown, rprojroot,\nrstudioapi, testthat (>= 3.2.0), tibble, whoami, withr",
         "Config/Needs/website": "r-lib/asciicast, bench, brio, cpp11, decor, desc,\nfansi, prettyunits, sessioninfo, tidyverse/tidytemplate,\nusethis, vctrs",
         "Config/testthat/edition": "3",
+        "Config/usethis/last-upkeep": "2025-04-25",
         "Encoding": "UTF-8",
-        "RoxygenNote": "7.3.2",
+        "RoxygenNote": "7.3.2.9000",
         "NeedsCompilation": "yes",
-        "Packaged": "2025-04-22 12:00:18 UTC; gaborcsardi",
-        "Author": "Gábor Csárdi [aut, cre],\n  Hadley Wickham [ctb],\n  Kirill Müller [ctb],\n  Salim Brüggemann [ctb] (<https://orcid.org/0000-0002-5329-5987>),\n  Posit Software, PBC [cph, fnd]",
+        "Packaged": "2026-04-08 18:14:45 UTC; gaborcsardi",
+        "Author": "Gábor Csárdi [aut, cre],\n  Hadley Wickham [ctb],\n  Kirill Müller [ctb],\n  Salim Brüggemann [ctb] (ORCID: <https://orcid.org/0000-0002-5329-5987>),\n  Posit Software, PBC [cph, fnd] (ROR: <https://ror.org/03wc8by49>)",
         "Maintainer": "Gábor Csárdi <gabor@posit.co>",
         "Repository": "CRAN",
-        "Date/Publication": "2025-04-23 13:50:02 UTC",
-        "Built": "R 4.5.2; x86_64-w64-mingw32; 2026-03-06 11:03:28 UTC; windows",
+        "Date/Publication": "2026-04-09 09:50:18 UTC",
+        "Built": "R 4.5.3; x86_64-w64-mingw32; 2026-04-11 23:53:41 UTC; windows",
         "Archs": "x64",
         "RemoteType": "standard",
         "RemoteRef": "cli",
@@ -717,7 +718,7 @@
         "RemoteRepos": "https://cloud.r-project.org",
         "RemoteReposName": "CRAN",
         "RemotePkgPlatform": "x86_64-w64-mingw32",
-        "RemoteSha": "3.6.5"
+        "RemoteSha": "3.6.6"
       }
     },
     "commonmark": {
@@ -3283,58 +3284,31 @@
       "checksum": "131145a2a885dfde2baa31d34b3a4229"
     },
     ".Renviron": {
-      "checksum": "d2aa8aecdd3fbf70255b8f1f7c14e52f"
+      "checksum": "b9a6019e0abcd4627bf31f52f98e9c89"
     },
     ".Rprofile": {
-      "checksum": "7dc5ded1de7fc5b32db08eb1d8b693fe"
+      "checksum": "4329488a10e92a0ad04a9ab84b9809e3"
     },
     "add_users.R": {
       "checksum": "a7db6b2a8a6d90c146e9f0f0485b9447"
     },
     "app.R": {
-      "checksum": "cf658a661b8e7d85b8974aa83e89fdaf"
+      "checksum": "4ff7993d7a6c0ba8dccc584d32a6ba57"
     },
     "credentials.sqlite": {
-      "checksum": "87984dba078d3599e6fe66013876fa92"
+      "checksum": "4338da91d8a574129df9bb6f382840b4"
     },
     "data/Base_data.xlsx": {
-      "checksum": "7ecddb8ff76c31db15feb029efb134f2"
+      "checksum": "e62d1146c0adc4c65318025e0096e18f"
     },
-    "data/Base_data_backup_1774620075.xlsx": {
-      "checksum": "c68a2807e8942264005b888bafa16a03"
-    },
-    "data/Base_data_backup_1774622761.xlsx": {
-      "checksum": "310e407f1bdc7a6567e57e8a849bc85b"
-    },
-    "data/Base_data_backup_1774622840.xlsx": {
-      "checksum": "310e407f1bdc7a6567e57e8a849bc85b"
-    },
-    "data/Base_data_backup_1774623483.xlsx": {
-      "checksum": "310e407f1bdc7a6567e57e8a849bc85b"
-    },
-    "data/Base_data_backup_1774854413.xlsx": {
-      "checksum": "1ea0d7413b995b64b843b5862689f280"
-    },
-    "data/Base_data_backup_1774857615.xlsx": {
-      "checksum": "1ea0d7413b995b64b843b5862689f280"
-    },
-    "data/Base_data_backup_1774858452.xlsx": {
-      "checksum": "1ea0d7413b995b64b843b5862689f280"
-    },
-    "data/Base_data_backup_1774858485.xlsx": {
-      "checksum": "1ea0d7413b995b64b843b5862689f280"
-    },
-    "data/Base_data_backup_1774860517.xlsx": {
-      "checksum": "1ea0d7413b995b64b843b5862689f280"
-    },
-    "data/Base_data_backup_1774860542.xlsx": {
-      "checksum": "1ea0d7413b995b64b843b5862689f280"
-    },
-    "data/Base_data_backup_1774860616.xlsx": {
-      "checksum": "1ea0d7413b995b64b843b5862689f280"
+    "data/Base_data_backup_1775109739.xlsx": {
+      "checksum": "e62d1146c0adc4c65318025e0096e18f"
     },
     "R/config.R": {
-      "checksum": "d9be49270eaeb90bb7d73fedb7bc038c"
+      "checksum": "6e584a28b8b24f78a811909c533d6530"
+    },
+    "R/ftp_handler.R": {
+      "checksum": "b840485bb1da1c02b40cc190c77027d5"
     },
     "R/helpers_core.R": {
       "checksum": "d9420f6f0950d28309ddc7a7a4d170a8"
@@ -3358,31 +3332,31 @@
       "checksum": "117f3c937862e1887a0f613800be0d2c"
     },
     "R/interval_report.R": {
-      "checksum": "24587fd1443c888f151d4d8167882afa"
+      "checksum": "d66058f0c69155b641caf6cd6200f03b"
     },
     "R/server.R": {
-      "checksum": "61a3636b38faab5a316256fad17ea589"
+      "checksum": "1889f7f0c7147f19650197a81f8ada76"
     },
     "R/server_add_handlers.R": {
       "checksum": "e48480e7349a38b6dbd6dee3f866995a"
     },
     "R/server_bonus_report.R": {
-      "checksum": "4df84303ca905d6e5d69c15acdd3bf5b"
+      "checksum": "b1a50a82888b08b25a96d7c1f3c5cf62"
     },
     "R/server_refresh.R": {
       "checksum": "a0d7a606e41e47492ffb8fe5b87f29a6"
     },
     "R/ui.R": {
-      "checksum": "0c661f9f344ea015f6aedc2645b5682b"
+      "checksum": "26b7b5a686a8d4b10576d8caafddaf75"
     },
     "README.md": {
       "checksum": "37db55aa3351ab36c801d6c4119d8e0f"
     },
     "renv.lock": {
-      "checksum": "eadcf61cbcd44cd033bdf5b2773739b4"
+      "checksum": "ad5a2dae3a6785d16bcc15ff6b864335"
     },
     "setup_credentials.R": {
-      "checksum": "6f4cab273541cc19f7465f18646cda43"
+      "checksum": "eeacb435371663cd5354a71dda3bd938"
     }
   },
   "users": null
