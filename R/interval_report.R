@@ -276,29 +276,39 @@ build_interval_report <- function(wb, labels,
   end_month   <- as.integer(end_month)
 
   # Helper: empty data frame with the bonus summary schema.
-  empty_bonus_summary <- function() data.frame(
-    period_date        = as.Date(character(0)),
-    bonus_type         = character(0),
-    rapporterande_name = character(0),
-    customer_name      = character(0),
-    uppdrag_label      = character(0),
-    uppgift_label      = character(0),
-    bonus_procent      = numeric(0),
-    invoiced_amount    = numeric(0),
-    bonus_amount       = numeric(0),
-    stringsAsFactors   = FALSE
-  )
+  empty_bonus_summary <- function() {
+    df <- data.frame(
+      period_date        = as.Date(character(0)),
+      bonus_type         = character(0),
+      rapporterande_name = character(0),
+      customer_name      = character(0),
+      maklare_display    = character(0),
+      uppdrag_label      = character(0),
+      uppgift_label      = character(0),
+      bonus_procent      = numeric(0),
+      invoiced_amount    = numeric(0),
+      bonus_amount       = numeric(0),
+      stringsAsFactors   = FALSE
+    )
+    names(df)[names(df) == "maklare_display"] <- "M\u00e4klare namn"
+    df
+  }
 
   make_empty <- function() {
     list(
-      detail = data.frame(
-        period_date = as.Date(character(0)),
-        fornamn = character(0), efternamn = character(0),
-        kundnamn = character(0), uppdrag_label = character(0),
-        timmar = numeric(0), timpris_used = numeric(0),
-        total_summa = numeric(0), debiteringsgrad = numeric(0),
-        stringsAsFactors = FALSE
-      ),
+      detail = local({
+        .d <- data.frame(
+          period_date = as.Date(character(0)),
+          fornamn = character(0), efternamn = character(0),
+          kundnamn = character(0), maklare_display = character(0),
+          uppdrag_label = character(0),
+          timmar = numeric(0), timpris_used = numeric(0),
+          total_summa = numeric(0), debiteringsgrad = numeric(0),
+          stringsAsFactors = FALSE
+        )
+        names(.d)[names(.d) == "maklare_display"] <- "M\u00e4klare namn"
+        .d
+      }),
       summary = data.frame(
         period_date = as.Date(character(0)),
         fornamn = character(0), efternamn = character(0),
@@ -395,6 +405,46 @@ build_interval_report <- function(wb, labels,
     ) |>
     select(uppdrag_id, uppdrag_label)
 
+  # uppdrag_id → "Mäklare namn" via FaktureringInformation + Maklare
+  # Chain: Uppdrag.faktura_mottagare_id → FM (mottagare_typ == "Mäklare") → maklare_id → Maklare.maklare_namn
+  fm_df        <- sanitize_nulls_df(wb[["FaktureringInformation"]])
+  makl_df      <- sanitize_nulls_df(wb[["Maklare"]])
+  .empty_mmap  <- data.frame(uppdrag_id = character(0), maklare_display = character(0),
+                             stringsAsFactors = FALSE)
+  maklare_map  <- tryCatch({
+    fm_cols_ok   <- nrow(fm_df) > 0 &&
+                    all(c("faktura_mottagare_id", "mottagare_typ", "maklare_id") %in% names(fm_df))
+    makl_cols_ok <- nrow(makl_df) > 0 &&
+                    all(c("maklare_id", "maklare_namn") %in% names(makl_df))
+    if (!fm_cols_ok || !makl_cols_ok) {
+      .empty_mmap
+    } else {
+      upp_fm <- sanitize_nulls_df(wb[["Uppdrag"]]) |>
+        mutate(uppdrag_id           = as.character(uppdrag_id),
+               faktura_mottagare_id = as.character(faktura_mottagare_id)) |>
+        select(uppdrag_id, faktura_mottagare_id)
+
+      fm_maklare <- fm_df |>
+        mutate(faktura_mottagare_id = as.character(faktura_mottagare_id),
+               mottagare_typ        = as.character(mottagare_typ),
+               maklare_id           = as.character(maklare_id)) |>
+        filter(!is.na(mottagare_typ) & mottagare_typ == "M\u00e4klare") |>
+        select(faktura_mottagare_id, maklare_id)
+
+      makl_nm <- makl_df |>
+        mutate(maklare_id   = as.character(maklare_id),
+               maklare_namn = as.character(maklare_namn)) |>
+        select(maklare_id, maklare_namn)
+
+      upp_fm |>
+        left_join(fm_maklare, by = "faktura_mottagare_id") |>
+        left_join(makl_nm,    by = "maklare_id") |>
+        rename(maklare_display = maklare_namn) |>
+        select(uppdrag_id, maklare_display) |>
+        distinct(uppdrag_id, .keep_all = TRUE)
+    }
+  }, error = function(e) .empty_mmap)
+
   monthly_detail  <- vector("list", length(month_firsts))
   monthly_summary <- vector("list", length(month_firsts))
   monthly_gs_list <- vector("list", length(month_firsts))  # [+] one row per month
@@ -441,11 +491,12 @@ build_interval_report <- function(wb, labels,
     tid_m_named$kundnamn[is_na_kund]         <- tid_m_named$customer_id[is_na_kund]
     is_na_upp   <- is.na(tid_m_named$uppdrag_label)
     tid_m_named$uppdrag_label[is_na_upp]     <- tid_m_named$uppdrag_id[is_na_upp]
+    tid_m_named <- left_join(tid_m_named, maklare_map, by = "uppdrag_id")
 
-    # Detail: group by consultant + customer + uppdrag
+    # Detail: group by consultant + customer + mäklare + uppdrag
     detail_m <- tid_m_named |>
       mutate(period_date = fd) |>
-      group_by(period_date, fornamn, efternamn, kundnamn, uppdrag_label) |>
+      group_by(period_date, fornamn, efternamn, kundnamn, maklare_display, uppdrag_label) |>
       summarise(
         timmar      = sum(timmar,      na.rm = TRUE),
         total_summa = sum(total_summa, na.rm = TRUE),
@@ -459,7 +510,7 @@ build_interval_report <- function(wb, labels,
           NA_real_
         )
       ) |>
-      select(period_date, fornamn, efternamn, kundnamn, uppdrag_label,
+      select(period_date, fornamn, efternamn, kundnamn, maklare_display, uppdrag_label,
              timmar, timpris_used, total_summa, debiteringsgrad) |>
       arrange(fornamn, efternamn, kundnamn, uppdrag_label)
 
@@ -532,6 +583,7 @@ build_interval_report <- function(wb, labels,
   if (length(monthly_detail) == 0) return(make_empty())
 
   detail_all  <- bind_rows(monthly_detail)
+  names(detail_all)[names(detail_all) == "maklare_display"] <- "M\u00e4klare namn"
   summary_all <- bind_rows(monthly_summary)
 
   # Total scheduled hours across the whole selected interval (same for all consultants).
@@ -625,6 +677,7 @@ build_interval_report <- function(wb, labels,
     br_named <- merge(br_named,  kund_map,     by = "customer_id",     all.x = TRUE)
     br_named <- merge(br_named,  uppdrag_map,  by = "uppdrag_id",      all.x = TRUE)
     br_named <- merge(br_named,  uppgift_map2, by = "uppgift_id",      all.x = TRUE)
+    br_named <- left_join(br_named, maklare_map, by = "uppdrag_id")
 
     # Fall back to raw IDs wherever display names could not be resolved
     br_named$rapporterande_name[is.na(br_named$rapporterande_name)] <-
@@ -647,6 +700,7 @@ build_interval_report <- function(wb, labels,
       bonus_type         = br_named$bonus_type_lbl,
       rapporterande_name = br_named$rapporterande_name,
       customer_name      = br_named$kundnamn,
+      maklare_display    = br_named$maklare_display,
       uppdrag_label      = br_named$uppdrag_label,
       uppgift_label      = br_named$uppgift_label,
       bonus_procent      = br_named$bonus_procent,
@@ -654,6 +708,7 @@ build_interval_report <- function(wb, labels,
       bonus_amount       = br_named$bonus_amount,
       stringsAsFactors   = FALSE
     )
+    names(br_out)[names(br_out) == "maklare_display"] <- "M\u00e4klare namn"
     br_out <- br_out[order(br_out$period_date, br_out$rapporterande_name), , drop = FALSE]
 
     group_bonus_summary <- br_out[br_out$bonus_type == "Group", , drop = FALSE]
