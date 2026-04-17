@@ -1,3 +1,8 @@
+# Global flagga — delas mellan alla sessioner i samma R-process.
+# Förhindrar att shinymanager skapar en dubbel startup-backup:
+# en gång för login-sessionen och en gång för den autentiserade sessionen.
+if (!exists(".startup_backup_done")) .startup_backup_done <- FALSE
+
 server <- function(input, output, session) {
 
   # ===================== AUTENTISERING =====================
@@ -56,11 +61,12 @@ server <- function(input, output, session) {
     ))
     on.exit(unlink(local_temp), add = TRUE)   # ta bort tempfilen när funktionen avslutas
 
-    # ÄNDRAT: startup-backup laddas upp till FTP (kopierar den nedladdade tempfilen)
-    if (!isTRUE(rv$startup_backup_done)) {
+    # Startup-backup: körs bara EN gång per R-process (global flagga).
+    # shinymanager startar två sessioner (login + autentiserad) — rv-flaggor
+    # räcker inte eftersom rv nollställs per session.
+    if (!isTRUE(.startup_backup_done)) {
       bk <- tryCatch({
-        bname <- ftp_backup_filename(FTP_REMOTE_FILE)
-        ftp_upload(local_temp, bname)
+        bname <- ftp_create_backup(local_temp, FTP_REMOTE_FILE)
         list(ok = TRUE, name = bname)
       }, error = function(e) {
         list(ok = FALSE, name = "", msg = conditionMessage(e))
@@ -73,7 +79,7 @@ server <- function(input, output, session) {
           type = "warning", duration = 6
         )
       }
-      rv$startup_backup_done <- TRUE
+      .startup_backup_done <<- TRUE   # <<- skriver till global scope
     }
 
     wb <- read_wb_clean(local_temp)    # oförändrat — läser från tempfil
@@ -828,12 +834,12 @@ server <- function(input, output, session) {
     local_temp <- tempfile(fileext = ".xlsx")
     on.exit(unlink(local_temp), add = TRUE)
 
-    # ÄNDRAT: backup laddas upp till FTP (skriver rv$wb till backup-filnamn)
+    # Manuell backup ("Spara alla ändringar" / avsluta): skriv wb till tempfil,
+    # ladda upp till backup-katalogen och kör automatisk rensning.
     if (with_backup) {
       tryCatch({
         writexl::write_xlsx(rv$wb, path = local_temp)
-        bname <- ftp_backup_filename(FTP_REMOTE_FILE)
-        ftp_upload(local_temp, bname)
+        ftp_create_backup(local_temp, FTP_REMOTE_FILE)
       }, error = function(e) {
         warning(paste("[FTP] Backup-uppladdning misslyckades:", conditionMessage(e)))
       })
